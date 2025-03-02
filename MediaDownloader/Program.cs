@@ -28,25 +28,29 @@ namespace MediaDownloaderApp
                 downloadFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\Downloads";
             }
 
-            // Prompt 4: Create Captions
-            Console.Write("4) Do you want to create captions? Type [Y] for yes or anything else for no: ");
+            // Prompt 4: Conversion
+            Console.Write("4) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank for no: ");
+            string conversionFormat = Console.ReadLine();
+
+            // Prompt 5: Create Captions
+            Console.Write("5) Do you want to create captions? Type [Y] for yes or anything else for no: ");
             string createCaptionsResponse = Console.ReadLine();
             bool createCaptions = createCaptionsResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
 
             bool summarizeVideo = false;
             string customPrompt = string.Empty;
 
-            // Prompt 5: Summarize Video
+            // Prompt 6: Summarize Video
             if (createCaptions)
             {
-                Console.Write("5) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
+                Console.Write("6) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
                 string summarizeResponse = Console.ReadLine();
                 summarizeVideo = summarizeResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
 
-                // Prompt 6: Custom Summarization Prompt
+                // Prompt 7: Custom Summarization Prompt
                 if (summarizeVideo)
                 {
-                    Console.Write("6) Write the prompt used to summarize or leave blank to use a default prompt: ");
+                    Console.Write("7) Write the prompt used to summarize or leave blank to use a default prompt: ");
                     customPrompt = Console.ReadLine();
                 }
             }
@@ -54,6 +58,14 @@ namespace MediaDownloaderApp
             // Initialize downloader and download media
             MediaDownloader downloader = new MediaDownloader();
             string downloadedFilePath = downloader.DownloadMedia(mediaLink, timeRange, downloadFolder);
+
+            if (!string.IsNullOrWhiteSpace(conversionFormat))
+            {
+                Converter converter = new Converter();
+                string convertedFilePath = Path.ChangeExtension(downloadedFilePath, conversionFormat);
+                converter.ConvertVideoAsync(downloadedFilePath, convertedFilePath).GetAwaiter().GetResult();
+                downloadedFilePath = convertedFilePath;
+            }
 
             // Create captions if requested
             if (createCaptions)
