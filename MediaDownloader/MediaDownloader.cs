@@ -21,7 +21,7 @@ namespace MediaDownloaderApp
             Console.WriteLine("Downloading media...");
 
             // Build yt-dlp arguments
-            string arguments = $"-o \"{downloadFolder}\\%(title)s.%(ext)s\" \"{mediaLink}\"";
+            string arguments = $"-f \"bestvideo+bestaudio/best\" -o \"{downloadFolder}\\%(title)s.%(ext)s\" \"{mediaLink}\"";
 
             // Add time range if specified
             if (!string.IsNullOrWhiteSpace(timeRange))

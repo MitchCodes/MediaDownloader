@@ -32,25 +32,29 @@ namespace MediaDownloaderApp
             Console.Write("4) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank for no: ");
             string conversionFormat = Console.ReadLine();
 
-            // Prompt 5: Create Captions
-            Console.Write("5) Do you want to create captions? Type [Y] for yes or anything else for no: ");
+            // Prompt 5: Audio Extraction
+            Console.Write("5) Do you want to extract the audio to an audio format? Type the format (like mp3) without the '.'. Leave blank for no: ");
+            string audioExtractionFormat = Console.ReadLine();
+
+            // Prompt 6: Create Captions
+            Console.Write("6) Do you want to create captions? Type [Y] for yes or anything else for no: ");
             string createCaptionsResponse = Console.ReadLine();
             bool createCaptions = createCaptionsResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
 
             bool summarizeVideo = false;
             string customPrompt = string.Empty;
 
-            // Prompt 6: Summarize Video
+            // Prompt 7: Summarize Video
             if (createCaptions)
             {
-                Console.Write("6) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
+                Console.Write("7) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
                 string summarizeResponse = Console.ReadLine();
                 summarizeVideo = summarizeResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
 
-                // Prompt 7: Custom Summarization Prompt
+                // Prompt 8: Custom Summarization Prompt
                 if (summarizeVideo)
                 {
-                    Console.Write("7) Write the prompt used to summarize or leave blank to use a default prompt: ");
+                    Console.Write("8) Write the prompt used to summarize or leave blank to use a default prompt: ");
                     customPrompt = Console.ReadLine();
                 }
             }
@@ -65,6 +69,13 @@ namespace MediaDownloaderApp
                 string convertedFilePath = Path.ChangeExtension(downloadedFilePath, conversionFormat);
                 converter.ConvertVideoAsync(downloadedFilePath, convertedFilePath).GetAwaiter().GetResult();
                 downloadedFilePath = convertedFilePath;
+            }
+
+            if (!string.IsNullOrWhiteSpace(audioExtractionFormat))
+            {
+                Converter converter = new Converter();
+                string audioFilePath = Path.ChangeExtension(downloadedFilePath, audioExtractionFormat);
+                converter.ExtractAudioToMp3Async(downloadedFilePath, audioFilePath).GetAwaiter().GetResult();
             }
 
             // Create captions if requested
