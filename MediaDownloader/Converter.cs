@@ -22,8 +22,11 @@ namespace MediaDownloaderApp
             if (string.IsNullOrWhiteSpace(outputFile))
                 throw new ArgumentException("Output file must be specified", nameof(outputFile));
 
+            Console.WriteLine($"Starting video conversion: {inputFile} -> {outputFile}");
+
             // Build the ffmpeg arguments. This command copies the video and audio streams.
             string arguments = $"-i \"{inputFile}\" -c:v copy -c:a copy \"{outputFile}\"";
+            Console.WriteLine($"Running command: ffmpeg {arguments}");
 
             var startInfo = new ProcessStartInfo
             {
@@ -38,6 +41,7 @@ namespace MediaDownloaderApp
             using Process process = new Process { StartInfo = startInfo };
 
             process.Start();
+            Console.WriteLine("FFmpeg process started...");
 
             // Capture standard output and error (optional, useful for logging or debugging).
             string output = await process.StandardOutput.ReadToEndAsync();
@@ -45,10 +49,15 @@ namespace MediaDownloaderApp
 
             await process.WaitForExitAsync();
 
+            Console.WriteLine("FFmpeg process exited.");
+
             if (process.ExitCode != 0)
             {
-                throw new Exception($"FFmpeg exited with error code {process.ExitCode}: {error}");
+                Console.WriteLine($"FFmpeg error output: {error}");
+                throw new Exception($"FFmpeg exited with error code {process.ExitCode}");
             }
+
+            Console.WriteLine("Video conversion completed successfully.");
         }
     }
 }
