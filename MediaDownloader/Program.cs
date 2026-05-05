@@ -29,7 +29,7 @@ namespace MediaDownloaderApp
             }
 
             // Prompt 4: Conversion
-            Console.Write("4) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank for no: ");
+            Console.Write("4) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank to keep the source format. Format: ");
             string conversionFormat = Console.ReadLine();
 
             // Prompt 5: Audio Extraction
@@ -62,13 +62,28 @@ namespace MediaDownloaderApp
             // Initialize downloader and download media
             MediaDownloader downloader = new MediaDownloader();
             string downloadedFilePath = downloader.DownloadMedia(mediaLink, timeRange, downloadFolder);
+            string sourceFormat = Path.GetExtension(downloadedFilePath).TrimStart('.');
+
+            if (string.IsNullOrWhiteSpace(conversionFormat))
+            {
+                conversionFormat = sourceFormat;
+            }
 
             if (!string.IsNullOrWhiteSpace(conversionFormat))
             {
-                Converter converter = new Converter();
-                string convertedFilePath = Path.ChangeExtension(downloadedFilePath, conversionFormat);
-                converter.ConvertVideoAsync(downloadedFilePath, convertedFilePath).GetAwaiter().GetResult();
-                downloadedFilePath = convertedFilePath;
+                conversionFormat = conversionFormat.Trim().TrimStart('.');
+
+                if (!conversionFormat.Equals(sourceFormat, StringComparison.OrdinalIgnoreCase))
+                {
+                    Converter converter = new Converter();
+                    string convertedFilePath = Path.ChangeExtension(downloadedFilePath, conversionFormat);
+                    converter.ConvertVideoAsync(downloadedFilePath, convertedFilePath).GetAwaiter().GetResult();
+                    downloadedFilePath = convertedFilePath;
+                }
+                else
+                {
+                    Console.WriteLine($"Skipping video conversion because the source format is already '{sourceFormat}'.");
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(audioExtractionFormat))
