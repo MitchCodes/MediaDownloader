@@ -28,40 +28,44 @@ namespace MediaDownloaderApp
                 downloadFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\Downloads";
             }
 
-            // Prompt 4: Conversion
-            Console.Write("4) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank to keep the source format. Format: ");
+            // Prompt 4: Download Quality
+            Console.Write("4) Choose download quality for audio/video: [best] (default), worst, or default. Quality: ");
+            string downloadQuality = Console.ReadLine();
+
+            // Prompt 5: Conversion
+            Console.Write("5) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank to keep the source format. Format: ");
             string conversionFormat = Console.ReadLine();
 
-            // Prompt 5: Audio Extraction
-            Console.Write("5) Do you want to extract the audio to an audio format? Type the format (like mp3) without the '.'. Leave blank for no: ");
+            // Prompt 6: Audio Extraction
+            Console.Write("6) Do you want to extract the audio to an audio format? Type the format (like mp3) without the '.'. Leave blank for no: ");
             string audioExtractionFormat = Console.ReadLine();
 
-            // Prompt 6: Create Captions
-            Console.Write("6) Do you want to create captions? Type [Y] for yes or anything else for no: ");
+            // Prompt 7: Create Captions
+            Console.Write("7) Do you want to create captions? Type [Y] for yes or anything else for no: ");
             string createCaptionsResponse = Console.ReadLine();
             bool createCaptions = createCaptionsResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
 
             bool summarizeVideo = false;
             string customPrompt = string.Empty;
 
-            // Prompt 7: Summarize Video
+            // Prompt 8: Summarize Video
             if (createCaptions)
             {
-                Console.Write("7) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
+                Console.Write("8) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
                 string summarizeResponse = Console.ReadLine();
                 summarizeVideo = summarizeResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
 
-                // Prompt 8: Custom Summarization Prompt
+                // Prompt 9: Custom Summarization Prompt
                 if (summarizeVideo)
                 {
-                    Console.Write("8) Write the prompt used to summarize or leave blank to use a default prompt: ");
+                    Console.Write("9) Write the prompt used to summarize or leave blank to use a default prompt: ");
                     customPrompt = Console.ReadLine();
                 }
             }
 
             // Initialize downloader and download media
             MediaDownloader downloader = new MediaDownloader();
-            string downloadedFilePath = downloader.DownloadMedia(mediaLink, timeRange, downloadFolder);
+            string downloadedFilePath = downloader.DownloadMedia(mediaLink, timeRange, downloadFolder, downloadQuality);
             string sourceFormat = Path.GetExtension(downloadedFilePath).TrimStart('.');
 
             if (string.IsNullOrWhiteSpace(conversionFormat))

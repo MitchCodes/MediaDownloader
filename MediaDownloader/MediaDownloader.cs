@@ -15,13 +15,18 @@ namespace MediaDownloaderApp
         /// <param name="mediaLink">The URL of the media to download.</param>
         /// <param name="timeRange">The time range to download (optional).</param>
         /// <param name="downloadFolder">The folder to save the downloaded media.</param>
+        /// <param name="downloadQuality">The requested download quality profile.</param>
         /// <returns>The file path of the downloaded media.</returns>
-        public string DownloadMedia(string mediaLink, string timeRange, string downloadFolder)
+        public string DownloadMedia(string mediaLink, string timeRange, string downloadFolder, string downloadQuality)
         {
             Console.WriteLine("Downloading media...");
 
             // Build yt-dlp arguments
-            string arguments = $"-f \"bestvideo+bestaudio/best\" -o \"{downloadFolder}\\%(title)s.%(ext)s\" \"{mediaLink}\"";
+            string qualitySelector = GetFormatSelector(downloadQuality);
+            string formatArgument = string.IsNullOrWhiteSpace(qualitySelector)
+                ? string.Empty
+                : $"-f \"{qualitySelector}\" ";
+            string arguments = $"{formatArgument}-o \"{downloadFolder}\\%(title)s.%(ext)s\" \"{mediaLink}\"";
 
             // Add time range if specified
             if (!string.IsNullOrWhiteSpace(timeRange))
@@ -47,6 +52,22 @@ namespace MediaDownloaderApp
 
             Console.WriteLine($"Media downloaded to: {downloadedFile}");
             return downloadedFile;
+        }
+
+        private static string GetFormatSelector(string downloadQuality)
+        {
+            if (string.IsNullOrWhiteSpace(downloadQuality))
+            {
+                return "bv*+ba/b";
+            }
+
+            return downloadQuality.Trim().ToLowerInvariant() switch
+            {
+                "best" => "bv*+ba/b",
+                "worst" => "wv*+wa/w",
+                "default" => string.Empty,
+                _ => "bv*+ba/b"
+            };
         }
 
         /// <summary>
