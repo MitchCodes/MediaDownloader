@@ -12,103 +12,118 @@ namespace MediaDownloaderApp
             // Make sure api key is loaded
             OpenAIKeyLoader.LoadApiKey();
 
-            // Prompt 1: Media Link
-            Console.Write("1) Media Link (YouTube, Instagram, etc): ");
-            string mediaLink = Console.ReadLine();
+            YtDlpResolution ytDlp = YtDlpResolver.ResolveAndUpdate();
 
-            // Prompt 2: Time Range
-            Console.Write("2) Enter a time range using hh:mm:ss-hh:mm:ss or leave blank for the full video. Range: ");
-            string timeRange = Console.ReadLine();
-
-            // Prompt 3: Download Folder
-            Console.Write("3) Choose a folder to download to. Leave blank for the user's downloads directory. Folder: ");
-            string downloadFolder = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(downloadFolder))
+            while (true)
             {
-                downloadFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\Downloads";
-            }
+                // Prompt 1: Media Link
+                Console.Write("1) Media Link (YouTube, Instagram, etc): ");
+                string mediaLink = Console.ReadLine();
 
-            // Prompt 4: Download Quality
-            Console.Write("4) Choose download quality for audio/video: [best] (default), worst, or default. Quality: ");
-            string downloadQuality = Console.ReadLine();
+                // Prompt 2: Time Range
+                Console.Write("2) Enter a time range using hh:mm:ss-hh:mm:ss or leave blank for the full video. Range: ");
+                string timeRange = Console.ReadLine();
 
-            // Prompt 5: Conversion
-            Console.Write("5) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank to keep the source format. Format: ");
-            string conversionFormat = Console.ReadLine();
-
-            // Prompt 6: Audio Extraction
-            Console.Write("6) Do you want to extract the audio to an audio format? Type the format (like mp3) without the '.'. Leave blank for no: ");
-            string audioExtractionFormat = Console.ReadLine();
-
-            // Prompt 7: Create Captions
-            Console.Write("7) Do you want to create captions? Type [Y] for yes or anything else for no: ");
-            string createCaptionsResponse = Console.ReadLine();
-            bool createCaptions = createCaptionsResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
-
-            bool summarizeVideo = false;
-            string customPrompt = string.Empty;
-
-            // Prompt 8: Summarize Video
-            if (createCaptions)
-            {
-                Console.Write("8) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
-                string summarizeResponse = Console.ReadLine();
-                summarizeVideo = summarizeResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
-
-                // Prompt 9: Custom Summarization Prompt
-                if (summarizeVideo)
+                // Prompt 3: Download Folder
+                Console.Write("3) Choose a folder to download to. Leave blank for the user's downloads directory. Folder: ");
+                string downloadFolder = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(downloadFolder))
                 {
-                    Console.Write("9) Write the prompt used to summarize or leave blank to use a default prompt: ");
-                    customPrompt = Console.ReadLine();
+                    downloadFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"\Downloads";
                 }
-            }
 
-            // Initialize downloader and download media
-            MediaDownloader downloader = new MediaDownloader();
-            string downloadedFilePath = downloader.DownloadMedia(mediaLink, timeRange, downloadFolder, downloadQuality);
-            string sourceFormat = Path.GetExtension(downloadedFilePath).TrimStart('.');
+                // Prompt 4: Download Quality
+                Console.Write("4) Choose download quality for audio/video: [best] (default), worst, or default. Quality: ");
+                string downloadQuality = Console.ReadLine();
 
-            if (string.IsNullOrWhiteSpace(conversionFormat))
-            {
-                conversionFormat = sourceFormat;
-            }
+                // Prompt 5: Conversion
+                Console.Write("5) Do you want to convert the video to a different format? Type the format (like mp4) without the '.'. Leave blank to keep the source format. Format: ");
+                string conversionFormat = Console.ReadLine();
 
-            if (!string.IsNullOrWhiteSpace(conversionFormat))
-            {
-                conversionFormat = conversionFormat.Trim().TrimStart('.');
+                // Prompt 6: Audio Extraction
+                Console.Write("6) Do you want to extract the audio to an audio format? Type the format (like mp3) without the '.'. Leave blank for no: ");
+                string audioExtractionFormat = Console.ReadLine();
 
-                if (!conversionFormat.Equals(sourceFormat, StringComparison.OrdinalIgnoreCase))
+                // Prompt 7: Create Captions
+                Console.Write("7) Do you want to create captions? Type [Y] for yes or anything else for no: ");
+                string createCaptionsResponse = Console.ReadLine();
+                bool createCaptions = createCaptionsResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
+
+                bool summarizeVideo = false;
+                string customPrompt = string.Empty;
+
+                // Prompt 8: Summarize Video
+                if (createCaptions)
+                {
+                    Console.Write("8) Do you want to use ChatGPT to summarize the video? Type [Y] for yes or anything else for no: ");
+                    string summarizeResponse = Console.ReadLine();
+                    summarizeVideo = summarizeResponse.Equals("Y", StringComparison.OrdinalIgnoreCase);
+
+                    // Prompt 9: Custom Summarization Prompt
+                    if (summarizeVideo)
+                    {
+                        Console.Write("9) Write the prompt used to summarize or leave blank to use a default prompt: ");
+                        customPrompt = Console.ReadLine();
+                    }
+                }
+
+                // Initialize downloader and download media
+                MediaDownloader downloader = new MediaDownloader(ytDlp.ExecutablePath);
+                string downloadedFilePath = downloader.DownloadMedia(mediaLink, timeRange, downloadFolder, downloadQuality);
+                string sourceFormat = Path.GetExtension(downloadedFilePath).TrimStart('.');
+
+                if (string.IsNullOrWhiteSpace(conversionFormat))
+                {
+                    conversionFormat = sourceFormat;
+                }
+
+                if (!string.IsNullOrWhiteSpace(conversionFormat))
+                {
+                    conversionFormat = conversionFormat.Trim().TrimStart('.');
+
+                    if (!conversionFormat.Equals(sourceFormat, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Converter converter = new Converter();
+                        string convertedFilePath = Path.ChangeExtension(downloadedFilePath, conversionFormat);
+                        converter.ConvertVideoAsync(downloadedFilePath, convertedFilePath).GetAwaiter().GetResult();
+                        downloadedFilePath = convertedFilePath;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Skipping video conversion because the source format is already '{sourceFormat}'.");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(audioExtractionFormat))
                 {
                     Converter converter = new Converter();
-                    string convertedFilePath = Path.ChangeExtension(downloadedFilePath, conversionFormat);
-                    converter.ConvertVideoAsync(downloadedFilePath, convertedFilePath).GetAwaiter().GetResult();
-                    downloadedFilePath = convertedFilePath;
+                    string audioFilePath = Path.ChangeExtension(downloadedFilePath, audioExtractionFormat);
+                    converter.ExtractAudioToMp3Async(downloadedFilePath, audioFilePath).GetAwaiter().GetResult();
                 }
-                else
+
+                // Create captions if requested
+                if (createCaptions)
                 {
-                    Console.WriteLine($"Skipping video conversion because the source format is already '{sourceFormat}'.");
+                    Transcriber transcriber = new Transcriber();
+                    string transcriptionFilePath = transcriber.CreateTranscription(downloadedFilePath);
+
+                    // Summarize if requested
+                    if (summarizeVideo)
+                    {
+                        Summarizer summarizer = new Summarizer();
+                        summarizer.GenerateSummary(transcriptionFilePath, customPrompt);
+                    }
                 }
-            }
 
-            if (!string.IsNullOrWhiteSpace(audioExtractionFormat))
-            {
-                Converter converter = new Converter();
-                string audioFilePath = Path.ChangeExtension(downloadedFilePath, audioExtractionFormat);
-                converter.ExtractAudioToMp3Async(downloadedFilePath, audioFilePath).GetAwaiter().GetResult();
-            }
+                Console.Write("Download another video? Type [Y] to continue or anything else to exit: ");
+                string continueResponse = Console.ReadLine();
 
-            // Create captions if requested
-            if (createCaptions)
-            {
-                Transcriber transcriber = new Transcriber();
-                string transcriptionFilePath = transcriber.CreateTranscription(downloadedFilePath);
-
-                // Summarize if requested
-                if (summarizeVideo)
+                if (!continueResponse.Equals("Y", StringComparison.OrdinalIgnoreCase))
                 {
-                    Summarizer summarizer = new Summarizer();
-                    summarizer.GenerateSummary(transcriptionFilePath, customPrompt);
+                    break;
                 }
+
+                Console.WriteLine();
             }
 
             Console.WriteLine("Process completed. Press any key to exit.");

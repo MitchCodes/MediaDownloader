@@ -9,6 +9,13 @@ namespace MediaDownloaderApp
     /// </summary>
     public class MediaDownloader
     {
+        private readonly string ytDlpExecutablePath;
+
+        public MediaDownloader(string ytDlpExecutablePath)
+        {
+            this.ytDlpExecutablePath = ytDlpExecutablePath;
+        }
+
         /// <summary>
         /// Downloads media from the provided link using yt-dlp.
         /// </summary>
@@ -22,11 +29,12 @@ namespace MediaDownloaderApp
             Console.WriteLine("Downloading media...");
 
             // Build yt-dlp arguments
+            string outputTemplate = Path.Combine(downloadFolder, "%(title)s.%(ext)s");
             string qualitySelector = GetFormatSelector(downloadQuality);
             string formatArgument = string.IsNullOrWhiteSpace(qualitySelector)
                 ? string.Empty
                 : $"-f \"{qualitySelector}\" ";
-            string arguments = $"{formatArgument}-o \"{downloadFolder}\\%(title)s.%(ext)s\" \"{mediaLink}\"";
+            string arguments = $"{formatArgument}-o \"{outputTemplate}\" \"{mediaLink}\"";
 
             // Add time range if specified
             if (!string.IsNullOrWhiteSpace(timeRange))
@@ -37,7 +45,7 @@ namespace MediaDownloaderApp
             // Start yt-dlp process
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
-                FileName = "yt-dlp",
+                FileName = ytDlpExecutablePath,
                 Arguments = arguments,
                 RedirectStandardOutput = false,
                 UseShellExecute = true,
